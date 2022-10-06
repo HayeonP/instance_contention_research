@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/hypark/git/instance_contention_research/devel/setup.sh
