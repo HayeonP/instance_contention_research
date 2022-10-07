@@ -3,6 +3,7 @@
 SyntheticTaskGenerator::SyntheticTaskGenerator()
     : private_nh_("~")
     , is_sync_(true)
+    , instance_(0)
 {
     /* Get rosparams */
     std::vector<std::string> pub_str_vec;
@@ -53,14 +54,14 @@ SyntheticTaskGenerator::SyntheticTaskGenerator()
         for(int i = 0; i < sub_str_vec.size(); i++){
             ros::Subscriber sub;
             // sub = nh_.subscribe(sub_str_vec[i].c_str(), 1, boost::bind(&SyntheticTaskGenerator::callback, _1, i), this);
-            sub = nh_.subscribe<geometry_msgs::PoseStamped>(sub_str_vec[i].c_str(), 1, boost::bind(&SyntheticTaskGenerator::callback, this, boost::placeholders::_1, i, sub_str_vec[i].c_str()));
+            sub = nh_.subscribe<synthetic_task_generator::SyntheticTaskMsg>(sub_str_vec[i].c_str(), 1, boost::bind(&SyntheticTaskGenerator::callback, this, boost::placeholders::_1, i, sub_str_vec[i].c_str()));
             sub_vec_.push_back(sub);
         }
     }
 
     for(int i = 0; i < pub_str_vec.size(); i++){
         ros::Publisher pub;
-        pub = nh_.advertise<geometry_msgs::PoseStamped>(pub_str_vec[i].c_str(), 1);
+        pub = nh_.advertise<synthetic_task_generator::SyntheticTaskMsg>(pub_str_vec[i].c_str(), 1);
         pub_vec_.push_back(pub);
     }    
     
@@ -93,6 +94,13 @@ SyntheticTaskGenerator::SyntheticTaskGenerator()
         }
     }
 
+    /* Check instnace mode is enabled */
+    #ifndef INSTANCE
+    if(instance_mode_){
+        std::cout<<"[ERROR - "<< node_name_ <<"] Cannot enable instance mode since pkg was built without INSTANCE macro."<<std::endl;
+        exit(1);
+    }
+    #endif
 
     /* Print variables(debug) */
     if(debug_) print_variables(pub_str_vec, sub_str_vec, sync_str_vec);
@@ -154,20 +162,23 @@ bool SyntheticTaskGenerator::is_ready_to_publish(){
 
 void SyntheticTaskGenerator::run()
 {   
-    #ifdef INSTANCE
-        std::cout<<"instance on"<<std::endl;
-    #endif
-
     ros::Rate rate(rate_);
 
     while(ros::ok()){
+        #ifdef INSTANCE
+        if(instance_mode_) set_sched_instance(0, instance_);
+        #endif
+
         ros::spinOnce();
 
         if(is_ready_to_publish()){
             for(int i = 0; i < pub_vec_.size(); i++)
             {            
-                geometry_msgs::PoseStamped msg;
-                msg.pose.position.x = pub_data_vec_[i]++;
+                synthetic_task_generator::SyntheticTaskMsg msg;
+                #ifdef INSTANCE
+                if(instance_mode_) msg.instance = instance_;
+                #endif
+                msg.value = pub_data_vec_[i]++;
                 pub_vec_[i].publish(msg);                                
             }
 
@@ -180,11 +191,17 @@ void SyntheticTaskGenerator::run()
     return;
 }
 
-void SyntheticTaskGenerator::callback(geometry_msgs::PoseStampedConstPtr msg, const int &sub_idx, const std::string topic_name)
+void SyntheticTaskGenerator::callback(synthetic_task_generator::SyntheticTaskMsgConstPtr msg, const int &sub_idx, const std::string topic_name)
 {    
-    if(debug_) std::cout<<"["<<node_name_<<"] callback for "<<topic_name<<" - Value: "<<msg->pose.position.x<<std::endl;
+    if(debug_) std::cout<<"["<<node_name_<<"] callback for "<<topic_name<<" - Value: "<<msg->value<<std::endl;
     if(is_sync_ && need_sync_vec_[sub_idx]){
         ready_to_sync_vec_[sub_idx] = true;
     }
+
+    #ifdef INSTANCE
+    if(is_source_) instance_++;
+    if(instance_mode_) instance_ = msg->instance;
+    #endif
+
     return;
 }

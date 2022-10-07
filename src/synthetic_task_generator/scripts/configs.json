@@ -5,7 +5,7 @@
         "rate": 1,
         "default_exec_time": 100.0,
         "callback_exec_time": 100.0,
-        "sub_list": [],
+        "sub_list": [],        
         "pub_list": ["topic1"],
         "pub_data": [1],        
         "sync_list": []

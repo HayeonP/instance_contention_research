@@ -6,7 +6,11 @@
 #include <yaml-cpp/yaml.h>
 
 #include <ros/ros.h>
-#include <geometry_msgs/PoseStamped.h>
+#include <synthetic_task_generator/SyntheticTaskMsg.h>
+
+#ifdef INSTANCE
+#include "sched_instance.h"
+#endif
 
 class SyntheticTaskGenerator{
 public:
@@ -14,7 +18,7 @@ public:
     ~SyntheticTaskGenerator();
     void run();
     
-    void callback(geometry_msgs::PoseStampedConstPtr msg, const int& sub_idx, const std::string topic_name);
+    void callback(synthetic_task_generator::SyntheticTaskMsgConstPtr msg, const int& sub_idx, const std::string topic_name);
 private: // Functions
     void initForROS();
     void print_variables(std::vector<std::string> pub_str_vec, std::vector<std::string> sub_str_vec , std::vector<std::string> sync_str_vec);    
@@ -39,6 +43,7 @@ private: // Variables
     double rate_, default_exec_time_, callback_exec_time_; //ms
 
     /* Others */    
+    int instance_;
     std::string node_name_;
     bool is_source_, is_sync_, instance_mode_, debug_;
 };
