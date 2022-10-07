@@ -1,6 +1,6 @@
 import rospy
 import json
-import roslaunch
+import os
 
 config_options = ['debug', 'rate', 'default_exec_time', 'callback_exec_time', 'pub_list', 'sub_list', 'sync_list']
 
@@ -94,7 +94,8 @@ def main():
         node_config = NodeConfig(node_name)
         if not node_config.update(configs[node_name]): exit(1)
         node_config_list.append(node_config)
-    
+        os.system('rosparam delete /'+node_name)
+
     launch_script_path = '/home/hypark/git/instance_contention_research/src/synthetic_task_generator/launch/synthetic_task_generator.launch'
 
     for node_config in node_config_list:
@@ -102,6 +103,9 @@ def main():
         node_config.set_rosparam()
     
     create_launch_script(launch_script_path, node_config_list)
+
+    # Launch node
+    os.system('roslaunch synthetic_task_generator synthetic_task_generator.launch')
 
     return
 

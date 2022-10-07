@@ -13,11 +13,12 @@ public:
     SyntheticTaskGenerator();    
     ~SyntheticTaskGenerator();
     void run();
-
+    
+    void callback(geometry_msgs::PoseStampedConstPtr msg, const int& sub_idx);
 private: // Functions
     void initForROS();
-    void print_variables(std::vector<std::string> pub_str_vec, std::vector<std::string> sub_str_vec , std::vector<std::string> sync_str_vec);
-    void callback(const geometry_msgs::PoseStamped &msg);
+    void print_variables(std::vector<std::string> pub_str_vec, std::vector<std::string> sub_str_vec , std::vector<std::string> sync_str_vec);    
+    bool is_ready_to_publish();
 private: // Variables
     
     /* Handle */
@@ -25,10 +26,14 @@ private: // Variables
     ros::NodeHandle private_nh_;
 
     /* Pub & Sub */
-    std::vector<ros::Publisher> pub_vec_;    
     std::vector<ros::Subscriber> sub_vec_;
-    std::vector<std::string> sync_vec_;
+    std::vector<ros::Publisher> pub_vec_;        
     std::vector<double> pub_data_vec_;
+
+    /* Sync */
+    std::vector<bool> need_sync_vec_;
+    std::vector<bool> ready_to_sync_vec_;
+    
     
     /* Task parameters */
     double rate_, default_exec_time_, callback_exec_time_; //ms

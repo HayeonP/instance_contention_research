@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(synthetic_task_generator)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -11,15 +11,8 @@ project(synthetic_task_generator)
 find_package(catkin REQUIRED COMPONENTS
   rospy
   roscpp
-  jsk_recognition_msgs
-  autoware_msgs
   geometry_msgs
-  nmea_msgs
   std_msgs
-  tf
-  gnss
-  rubis_lib
-  rubis_msgs
   geometry_msgs
 )
 

@@ -11,17 +11,17 @@ SyntheticTaskGenerator::SyntheticTaskGenerator()
 
     node_name_ = ros::this_node::getName();
 
-    if(!private_nh_.getParam("pub_list", pub_str_vec))
-    {
-        ROS_ERROR("Cannot find param: pub_list");
-        exit(1);
-    }
-
     if(!private_nh_.getParam("sub_list", sub_str_vec))
     {
         ROS_ERROR("Cannot find param: sub_list");
         exit(1);
     }
+
+    if(!private_nh_.getParam("pub_list", pub_str_vec))
+    {
+        ROS_ERROR("Cannot find param: pub_list");
+        exit(1);
+    }    
 
     if(!private_nh_.getParam("sync_list", sync_str_vec))
     {
@@ -45,25 +45,56 @@ SyntheticTaskGenerator::SyntheticTaskGenerator()
     
 
     /* Define Pub & Sub */
-    for(int i = 0; i < pub_str_vec.size(); i++){
-        ros::Publisher pub;
-        pub = nh_.advertise<geometry_msgs::PoseStamped>(pub_str_vec[i].c_str(), 1);
-        pub_vec_.push_back(pub);
-    }
-
     if(sub_str_vec.size() == 0) is_source_ = true;
 
     if(!is_source_)
     {
         for(int i = 0; i < sub_str_vec.size(); i++){
             ros::Subscriber sub;
-            sub = nh_.subscribe(sub_str_vec[i].c_str(), 1, &SyntheticTaskGenerator::callback ,this);
+            // sub = nh_.subscribe(sub_str_vec[i].c_str(), 1, boost::bind(&SyntheticTaskGenerator::callback, _1, i), this);
+            sub = nh_.subscribe<geometry_msgs::PoseStamped>(sub_str_vec[i].c_str(), 1, boost::bind(&SyntheticTaskGenerator::callback, this, boost::placeholders::_1, i));
             sub_vec_.push_back(sub);
         }
     }
 
-    if(debug_) print_variables(pub_str_vec, sub_str_vec, sync_str_vec);
+    for(int i = 0; i < pub_str_vec.size(); i++){
+        ros::Publisher pub;
+        pub = nh_.advertise<geometry_msgs::PoseStamped>(pub_str_vec[i].c_str(), 1);
+        pub_vec_.push_back(pub);
+    }    
     
+    /* Define Sync */
+    if(is_sync_){
+        for(int i = 0; i < sub_str_vec.size(); i++){        
+            bool need_sync = false;        
+            for(int j = 0; j < sync_str_vec.size(); j++){
+                if(sync_str_vec[j].compare(sub_str_vec[i]) == 0){ // Both are same
+                    need_sync = true;
+                    break;
+                }                
+            }
+            
+            if(need_sync) need_sync_vec_.push_back(true);        
+            else need_sync_vec_.push_back(false);
+
+            ready_to_sync_vec_.push_back(false);
+
+        }
+
+        int need_sync_cnt = 0;
+        for(int i = 0; i < need_sync_vec_.size(); i++){
+            if(need_sync_vec_[i]) need_sync_cnt++;
+        }
+
+        if(need_sync_cnt == 0){
+            std::cout<<"[ERROR - "<< node_name_ <<"] sync topic doesn't exist in subscription topic list."<<std::endl;
+            exit(1);
+        }
+    }
+
+
+    /* Print variables(debug) */
+    if(debug_) print_variables(pub_str_vec, sub_str_vec, sync_str_vec);
 }
 
 SyntheticTaskGenerator::~SyntheticTaskGenerator()
@@ -79,17 +110,17 @@ void SyntheticTaskGenerator::print_variables(std::vector<std::string> pub_str_ve
     std::cout<<"- default_exec_time: " <<default_exec_time_  <<std::endl;
     std::cout<<"- callback_exec_time: " << callback_exec_time_  <<std::endl;
     
-    std::cout<< "- Publish: " <<std::endl<<"\t["<<pub_str_vec[0];
-    for(auto it = pub_str_vec.begin()+1; it != pub_str_vec.end(); ++it){
-        std::cout<< ", " << *it;
-    }
-    std::cout<<"]"<<std::endl;
-
     std::cout<< "- Subscribe: " <<std::endl<<"\t["<<sub_str_vec[0];
     for(auto it = sub_str_vec.begin()+1; it != sub_str_vec.end(); ++it){
         std::cout<< ", " << *it;
     }
     std::cout<<"]"<<std::endl;
+
+    std::cout<< "- Publish: " <<std::endl<<"\t["<<pub_str_vec[0];
+    for(auto it = pub_str_vec.begin()+1; it != pub_str_vec.end(); ++it){
+        std::cout<< ", " << *it;
+    }
+    std::cout<<"]"<<std::endl;    
 
     std::cout<< "- Sync: " <<std::endl<<"\t["<<sync_str_vec[0];
     for(auto it = sync_str_vec.begin()+1; it != sync_str_vec.end(); ++it){
@@ -100,25 +131,44 @@ void SyntheticTaskGenerator::print_variables(std::vector<std::string> pub_str_ve
     std::cout<<"====================================="<<std::endl;
 }
 
+bool SyntheticTaskGenerator::is_ready_to_publish(){
+    if(!is_sync_) return true;    
+
+    for(int i = 0; i < need_sync_vec_.size(); i++){
+        if(need_sync_vec_[i] == true && ready_to_sync_vec_[i] == false) return false;
+    }
+
+    return true;
+}
+
 void SyntheticTaskGenerator::run()
 {   
     ros::Rate rate(rate_);
 
     while(ros::ok()){
         ros::spinOnce();
-        for(int i = 0; i < pub_vec_.size(); i++)
-        {            
-            geometry_msgs::PoseStamped msg;
-            msg.pose.position.x = pub_data_vec_[i];
-            pub_vec_[i].publish(msg);
+
+        if(is_ready_to_publish()){
+            for(int i = 0; i < pub_vec_.size(); i++)
+            {            
+                geometry_msgs::PoseStamped msg;
+                msg.pose.position.x = pub_data_vec_[i];
+                pub_vec_[i].publish(msg);                
+            }
+
+            for(int i = 0; i < ready_to_sync_vec_.size(); i++) ready_to_sync_vec_[i] = false;
         }
+        
 
         rate.sleep();
     }
     return;
 }
 
-void SyntheticTaskGenerator::callback(const geometry_msgs::PoseStamped &msg)
-{
+void SyntheticTaskGenerator::callback(geometry_msgs::PoseStampedConstPtr msg, const int &sub_idx)
+{       
+    if(is_sync_ && need_sync_vec_[sub_idx]){
+        ready_to_sync_vec_[sub_idx] = true;
+    }
     return;
 }

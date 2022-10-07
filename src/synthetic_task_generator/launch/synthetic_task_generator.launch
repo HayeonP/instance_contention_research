@@ -1,6 +1,4 @@
 <launch>
-	<node pkg="synthetic_task_generator" type="synthetic_task_generator" name="test1" output="screen"/>
 	<node pkg="synthetic_task_generator" type="synthetic_task_generator" name="test2" output="screen"/>
 	<node pkg="synthetic_task_generator" type="synthetic_task_generator" name="test3" output="screen"/>
-	<node pkg="synthetic_task_generator" type="synthetic_task_generator" name="test4" output="screen"/>
 </launch>
