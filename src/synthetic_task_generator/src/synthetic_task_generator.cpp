@@ -154,6 +154,10 @@ bool SyntheticTaskGenerator::is_ready_to_publish(){
 
 void SyntheticTaskGenerator::run()
 {   
+    #ifdef INSTANCE
+        std::cout<<"instance on"<<std::endl;
+    #endif
+
     ros::Rate rate(rate_);
 
     while(ros::ok()){
