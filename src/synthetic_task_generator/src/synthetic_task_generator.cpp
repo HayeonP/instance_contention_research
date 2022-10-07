@@ -39,6 +39,7 @@ SyntheticTaskGenerator::SyntheticTaskGenerator()
     if(sync_str_vec.empty()) is_sync_ = false;
 
     private_nh_.param<bool>("debug", debug_, false);
+    private_nh_.param<bool>("instance_mode", instance_mode_, false);
     private_nh_.param<double>("rate", rate_, 10);
     private_nh_.param<double>("default_exec_time", default_exec_time_, 100.0);
     private_nh_.param<double>("callback_exec_time", callback_exec_time_, 100.0);
@@ -52,7 +53,7 @@ SyntheticTaskGenerator::SyntheticTaskGenerator()
         for(int i = 0; i < sub_str_vec.size(); i++){
             ros::Subscriber sub;
             // sub = nh_.subscribe(sub_str_vec[i].c_str(), 1, boost::bind(&SyntheticTaskGenerator::callback, _1, i), this);
-            sub = nh_.subscribe<geometry_msgs::PoseStamped>(sub_str_vec[i].c_str(), 1, boost::bind(&SyntheticTaskGenerator::callback, this, boost::placeholders::_1, i));
+            sub = nh_.subscribe<geometry_msgs::PoseStamped>(sub_str_vec[i].c_str(), 1, boost::bind(&SyntheticTaskGenerator::callback, this, boost::placeholders::_1, i, sub_str_vec[i].c_str()));
             sub_vec_.push_back(sub);
         }
     }
@@ -104,27 +105,37 @@ void SyntheticTaskGenerator::print_variables(std::vector<std::string> pub_str_ve
 {
     std::cout<<"====================================="<<std::endl;
     std::cout<<"- node_name: " << node_name_ <<std::endl;
+    std::cout<<"- instance_mode: " << instance_mode_ <<std::endl;
     std::cout<<"- is_source: " << is_source_  <<std::endl;
     std::cout<<"- is_sync: " << is_sync_  <<std::endl;
     std::cout<<"- rate: " << rate_ <<std::endl;
     std::cout<<"- default_exec_time: " <<default_exec_time_  <<std::endl;
     std::cout<<"- callback_exec_time: " << callback_exec_time_  <<std::endl;
     
-    std::cout<< "- Subscribe: " <<std::endl<<"\t["<<sub_str_vec[0];
-    for(auto it = sub_str_vec.begin()+1; it != sub_str_vec.end(); ++it){
-        std::cout<< ", " << *it;
+    std::cout<< "- Subscribe: " <<std::endl<<"\t[";
+    if(sub_str_vec.size() > 1){
+        std::cout<<sub_str_vec[0];
+        for(auto it = sub_str_vec.begin()+1; it != sub_str_vec.end(); ++it){
+            std::cout<< ", " << *it;
+        }
     }
     std::cout<<"]"<<std::endl;
 
-    std::cout<< "- Publish: " <<std::endl<<"\t["<<pub_str_vec[0];
-    for(auto it = pub_str_vec.begin()+1; it != pub_str_vec.end(); ++it){
-        std::cout<< ", " << *it;
+    std::cout<< "- Publish: " <<std::endl<<"\t[";
+    if(pub_str_vec.size() > 1){
+        std::cout<<pub_str_vec[0];    
+        for(auto it = pub_str_vec.begin()+1; it != pub_str_vec.end(); ++it){
+            std::cout<< ", " << *it;
+        }
     }
     std::cout<<"]"<<std::endl;    
 
-    std::cout<< "- Sync: " <<std::endl<<"\t["<<sync_str_vec[0];
-    for(auto it = sync_str_vec.begin()+1; it != sync_str_vec.end(); ++it){
-        std::cout<< ", " << *it;
+    std::cout<< "- Sync: " <<std::endl<<"\t[";
+    if(sync_str_vec.size() > 1){
+        std::cout<<sync_str_vec[0];
+        for(auto it = sync_str_vec.begin()+1; it != sync_str_vec.end(); ++it){
+            std::cout<< ", " << *it;
+        }
     }
     std::cout<<"]"<<std::endl;
 
@@ -152,8 +163,8 @@ void SyntheticTaskGenerator::run()
             for(int i = 0; i < pub_vec_.size(); i++)
             {            
                 geometry_msgs::PoseStamped msg;
-                msg.pose.position.x = pub_data_vec_[i];
-                pub_vec_[i].publish(msg);                
+                msg.pose.position.x = pub_data_vec_[i]++;
+                pub_vec_[i].publish(msg);                                
             }
 
             for(int i = 0; i < ready_to_sync_vec_.size(); i++) ready_to_sync_vec_[i] = false;
@@ -165,8 +176,9 @@ void SyntheticTaskGenerator::run()
     return;
 }
 
-void SyntheticTaskGenerator::callback(geometry_msgs::PoseStampedConstPtr msg, const int &sub_idx)
-{       
+void SyntheticTaskGenerator::callback(geometry_msgs::PoseStampedConstPtr msg, const int &sub_idx, const std::string topic_name)
+{    
+    if(debug_) std::cout<<"["<<node_name_<<"] callback for "<<topic_name<<" - Value: "<<msg->pose.position.x<<std::endl;
     if(is_sync_ && need_sync_vec_[sub_idx]){
         ready_to_sync_vec_[sub_idx] = true;
     }

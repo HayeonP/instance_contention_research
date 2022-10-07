@@ -14,7 +14,7 @@ public:
     ~SyntheticTaskGenerator();
     void run();
     
-    void callback(geometry_msgs::PoseStampedConstPtr msg, const int& sub_idx);
+    void callback(geometry_msgs::PoseStampedConstPtr msg, const int& sub_idx, const std::string topic_name);
 private: // Functions
     void initForROS();
     void print_variables(std::vector<std::string> pub_str_vec, std::vector<std::string> sub_str_vec , std::vector<std::string> sync_str_vec);    
@@ -40,7 +40,7 @@ private: // Variables
 
     /* Others */    
     std::string node_name_;
-    bool is_source_, is_sync_, debug_;
+    bool is_source_, is_sync_, instance_mode_, debug_;
 };
 
 #endif 

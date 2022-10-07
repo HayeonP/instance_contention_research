@@ -7,6 +7,7 @@
     ```
     "node_name": {                          # Name for ROS node..
         "debug": false,                     # For visualize debug message.
+        "instance_mode: false,              # Not supported
         "rate": 10.0,                       # ROS rate.
         "default_exec_time": 100.0,         # Execution time for main routine.
         "callback_exec_time": 100.0,        # Execution time for callback routine.
