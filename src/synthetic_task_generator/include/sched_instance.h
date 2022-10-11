@@ -7,6 +7,7 @@
 #include <unistd.h>
 int set_sched_instance(pid_t pid, int sched_instance);
 int get_sched_instance(pid_t pid);
+int update_sched_instance(pid_t pid);
 #endif
 
 #endif

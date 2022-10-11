@@ -4,6 +4,7 @@ SyntheticTaskGenerator::SyntheticTaskGenerator()
     : private_nh_("~")
     , is_sync_(true)
     , instance_(0)
+    ,is_ready_to_set_schd_instance_(false)
 {
     /* Get rosparams */
     std::vector<std::string> pub_str_vec;
@@ -44,6 +45,7 @@ SyntheticTaskGenerator::SyntheticTaskGenerator()
     private_nh_.param<double>("rate", rate_, 10);
     private_nh_.param<double>("default_exec_time", default_exec_time_, 100.0);
     private_nh_.param<double>("callback_exec_time", callback_exec_time_, 100.0);
+    private_nh_.param<int>("next_list_size", next_list_size_, 0);
     
 
     /* Define Pub & Sub */
@@ -165,8 +167,23 @@ void SyntheticTaskGenerator::run()
     ros::Rate rate(rate_);
 
     while(ros::ok()){
+        /* Start job */
         #ifdef INSTANCE
-        if(instance_mode_) set_sched_instance(0, instance_);
+        if(instance_mode_){
+            if(!is_ready_to_set_schd_instance_){
+                private_nh_.getParam("next_list", next_list_vec);
+                if(next_list_vec.size() == next_list_size_) is_ready_to_set_schd_instance_ = true;
+            }
+
+            if(is_source_){
+                ++instnace_;
+            }
+            else{
+                update_sched_instance(0);
+                instance_ = get_sched_instance(0);
+            }
+            
+        }
         #endif
 
         ros::spinOnce();
@@ -175,17 +192,19 @@ void SyntheticTaskGenerator::run()
             for(int i = 0; i < pub_vec_.size(); i++)
             {            
                 synthetic_task_generator::SyntheticTaskMsg msg;
-                #ifdef INSTANCE
-                if(instance_mode_) msg.instance = instance_;
-                #endif
                 msg.value = pub_data_vec_[i]++;
                 pub_vec_[i].publish(msg);                                
             }
 
             for(int i = 0; i < ready_to_sync_vec_.size(); i++) ready_to_sync_vec_[i] = false;
-        }
-        
 
+            /* Finish job */
+            #ifdef INSTANCE
+            if(instance_mode_){
+                for(auto it = next_list_vec.begin(); it != next_list_vec.end(); it++) set_sched_instance(*it, instance_); // *it: next pid
+            }
+            #endif
+        }        
         rate.sleep();
     }
     return;

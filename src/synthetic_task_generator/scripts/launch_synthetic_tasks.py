@@ -97,8 +97,8 @@ class NodeConfig:
         next_list_param = []
         for next in self.next_list:
             for pid in pid_info[next]: next_list_param.append(pid)
-        print(next_list_param)
 
+        rospy.set_param('/'+self.name+'/next_list_size', len(next_list_param))
         rospy.set_param('/'+self.name+'/next_list', next_list_param)
 
 
@@ -164,13 +164,16 @@ def main():
     if os.fork() == 0: # Child process
         # Launch node
         os.system('roslaunch synthetic_task_generator synthetic_task_generator.launch')
-    else:
+    
+    else:        
         is_pid_info_initialized = False
         while(1):
             time.sleep(3)                        
             if not is_pid_info_initialized:
                 update_pid_info (json_config_list)
                 is_pid_info_initialized = validate_next_pids_are_prepared(json_config_list, node_config_list)
+                
+                # Set rosparam next_list for each node #
                 if is_pid_info_initialized:
                     for node_config in node_config_list: node_config.set_rosparam_next_list()
                         
