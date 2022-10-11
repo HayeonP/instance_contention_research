@@ -42,7 +42,7 @@ SyntheticTaskGenerator::SyntheticTaskGenerator()
     if(sync_str_vec.empty()) is_sync_ = false;
 
     private_nh_.param<bool>("debug", debug_, false);
-    private_nh_.param<bool>("debug", is_source_, false);
+    private_nh_.param<bool>("is_source", is_source_, false);
     private_nh_.param<bool>("instance_mode", instance_mode_, false);
     private_nh_.param<double>("rate", rate_, 10);
     private_nh_.param<double>("default_exec_time", default_exec_time_, 100.0);
@@ -178,11 +178,14 @@ void SyntheticTaskGenerator::run()
                 if(next_list_vec_.size() == next_list_size_) is_ready_to_set_schd_instance_ = true;
             }
 
-            if(is_source_){
-                ++instance_;
+            if(is_source_){                
+                instance_ = instance_ + 1;
+                set_sched_instance(0, instance_);
             }
-            else{
-                update_sched_instance(0);
+
+            update_sched_instance(0);
+            
+            if(!is_source_){
                 instance_ = get_sched_instance(0);
             }
             
@@ -203,6 +206,7 @@ void SyntheticTaskGenerator::run()
             for(int i = 0; i < pub_vec_.size(); i++)
             {            
                 synthetic_task_generator::SyntheticTaskMsg msg;
+                msg.instance = instance_;
                 msg.value = pub_data_vec_[i]++;
                 pub_vec_[i].publish(msg);                                
             }
