@@ -67,14 +67,14 @@ set(synthetic_task_generator_CONFIG_INCLUDED TRUE)
 
 # set variables for source/devel/install prefixes
 if("TRUE" STREQUAL "TRUE")
-  set(synthetic_task_generator_SOURCE_PREFIX /home/nvidia/git/instance_contention_research/src/synthetic_task_generator)
-  set(synthetic_task_generator_DEVEL_PREFIX /home/nvidia/git/instance_contention_research/devel)
+  set(synthetic_task_generator_SOURCE_PREFIX /home/hypark/git/instance_contention_research/src/synthetic_task_generator)
+  set(synthetic_task_generator_DEVEL_PREFIX /home/hypark/git/instance_contention_research/devel)
   set(synthetic_task_generator_INSTALL_PREFIX "")
   set(synthetic_task_generator_PREFIX ${synthetic_task_generator_DEVEL_PREFIX})
 else()
   set(synthetic_task_generator_SOURCE_PREFIX "")
   set(synthetic_task_generator_DEVEL_PREFIX "")
-  set(synthetic_task_generator_INSTALL_PREFIX /home/nvidia/git/instance_contention_research/install)
+  set(synthetic_task_generator_INSTALL_PREFIX /home/hypark/git/instance_contention_research/install)
   set(synthetic_task_generator_PREFIX ${synthetic_task_generator_INSTALL_PREFIX})
 endif()
 
@@ -91,9 +91,9 @@ endif()
 # flag project as catkin-based to distinguish if a find_package()-ed project is a catkin project
 set(synthetic_task_generator_FOUND_CATKIN_PROJECT TRUE)
 
-if(NOT "/home/nvidia/git/instance_contention_research/devel/include;/home/nvidia/git/instance_contention_research/src/synthetic_task_generator/include " STREQUAL " ")
+if(NOT "/home/hypark/git/instance_contention_research/devel/include;/home/hypark/git/instance_contention_research/src/synthetic_task_generator/include " STREQUAL " ")
   set(synthetic_task_generator_INCLUDE_DIRS "")
-  set(_include_dirs "/home/nvidia/git/instance_contention_research/devel/include;/home/nvidia/git/instance_contention_research/src/synthetic_task_generator/include")
+  set(_include_dirs "/home/hypark/git/instance_contention_research/devel/include;/home/hypark/git/instance_contention_research/src/synthetic_task_generator/include")
   if(NOT " " STREQUAL " ")
     set(_report "Check the issue tracker '' and consider creating a ticket if the problem has not been reported yet.")
   elseif(NOT " " STREQUAL " ")
@@ -110,7 +110,7 @@ if(NOT "/home/nvidia/git/instance_contention_research/devel/include;/home/nvidia
         message(FATAL_ERROR "Project 'synthetic_task_generator' specifies '${idir}' as an include dir, which is not found.  It does not exist in '${include}'.  ${_report}")
       endif()
     else()
-      message(FATAL_ERROR "Project 'synthetic_task_generator' specifies '${idir}' as an include dir, which is not found.  It does neither exist as an absolute directory nor in '/home/nvidia/git/instance_contention_research/src/synthetic_task_generator/${idir}'.  ${_report}")
+      message(FATAL_ERROR "Project 'synthetic_task_generator' specifies '${idir}' as an include dir, which is not found.  It does neither exist as an absolute directory nor in '/home/hypark/git/instance_contention_research/src/synthetic_task_generator/${idir}'.  ${_report}")
     endif()
     _list_append_unique(synthetic_task_generator_INCLUDE_DIRS ${include})
   endforeach()
@@ -154,7 +154,7 @@ foreach(library ${libraries})
     set(lib_path "")
     set(lib "${library}-NOTFOUND")
     # since the path where the library is found is returned we have to iterate over the paths manually
-    foreach(path /home/nvidia/git/instance_contention_research/devel/lib;/home/nvidia/git/instance_contention_research/devel/lib;/opt/ros/melodic/lib)
+    foreach(path /home/hypark/git/instance_contention_research/devel/lib;/home/hypark/git/instance_contention_research/devel/lib;/opt/ros/melodic/lib)
       find_library(lib ${library}
         PATHS ${path}
         NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
