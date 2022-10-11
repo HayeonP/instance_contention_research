@@ -48,10 +48,10 @@ private: // Variables
 
     /* Others */    
     int instance_;
-    int next_list_size_;
+    int next_pid_list_size_, cur_pid_list_size_;
     std::string node_name_;
     bool is_source_, is_sync_, instance_mode_, debug_, is_ready_to_set_schd_instance_;
-    std::vector<int> next_list_vec_;
+    std::vector<int> next_pid_list_vec_, cur_pid_list_vec_;
 };
 
 #endif 

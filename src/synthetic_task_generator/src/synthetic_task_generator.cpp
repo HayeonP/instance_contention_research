@@ -47,7 +47,8 @@ SyntheticTaskGenerator::SyntheticTaskGenerator()
     private_nh_.param<double>("rate", rate_, 10);
     private_nh_.param<double>("default_exec_time", default_exec_time_, 100.0);
     private_nh_.param<double>("callback_exec_time", callback_exec_time_, 100.0);
-    private_nh_.param<int>("next_list_size", next_list_size_, 0);
+    private_nh_.param<int>("cur_pid_list_size", cur_pid_list_size_, 0);
+    private_nh_.param<int>("next_pid_list_size", next_pid_list_size_, 0);
     
 
     /* Define Pub & Sub */    
@@ -174,16 +175,19 @@ void SyntheticTaskGenerator::run()
         #ifdef INSTANCE
         if(instance_mode_){
             if(!is_ready_to_set_schd_instance_){
-                private_nh_.getParam("next_list", next_list_vec_);
-                if(next_list_vec_.size() == next_list_size_) is_ready_to_set_schd_instance_ = true;
+                bool is_ready_to_set_schd_instance_param = false;
+                private_nh_.getParam("is_ready_to_set_schd_instance", is_ready_to_set_schd_instance_param);
+                private_nh_.getParam("cur_pid_list", cur_pid_list_vec_);
+                private_nh_.getParam("next_pid_list", next_pid_list_vec_);
+                if(is_ready_to_set_schd_instance_param == true && cur_pid_list_size_ > 0 && cur_pid_list_vec_.size() == cur_pid_list_size_ && next_pid_list_vec_.size() == next_pid_list_size_) is_ready_to_set_schd_instance_ = true;
             }
 
             if(is_source_){                
                 instance_ = instance_ + 1;
-                set_sched_instance(0, instance_);
+                for(int i = 0; cur_pid_list_vec_.size(); i++) set_sched_instance((pid_t)cur_pid_list_vec_[i], instance_);
             }
 
-            update_sched_instance(0);
+            for(int i = 0; i < cur_pid_list_vec_.size(); i++) update_sched_instance((pid_t)cur_pid_list_vec_[i]);
             
             if(!is_source_){
                 instance_ = get_sched_instance(0);
@@ -216,12 +220,12 @@ void SyntheticTaskGenerator::run()
             /* Finish job */
             #ifdef INSTANCE
             if(instance_mode_){
-                for(auto it = next_list_vec_.begin(); it != next_list_vec_.end(); it++) set_sched_instance(*it, instance_); // *it: next pid
+                for(int i = 0; i < next_pid_list_vec_.size(); i++) set_sched_instance((pid_t)next_pid_list_vec_[i], instance_); // *it: next pid
             }
             #endif
         }
-
         timer_stop(3);
+
         if(debug_){
             cold_start_cnt++;
             std::cout<<"====================================="<<std::endl;

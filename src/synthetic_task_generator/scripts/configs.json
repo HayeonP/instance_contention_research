@@ -10,7 +10,7 @@
         "pub_list": ["topic1"],
         "pub_data": [100],        
         "sync_list": [],
-        "next_list": ["test2"]
+        "next_node_list": ["test2"]
     },
     "test2": {        
         "debug": false,
@@ -23,7 +23,7 @@
         "pub_list": ["topic2"],
         "pub_data": [200],        
         "sync_list": [],
-        "next_list": ["test3"]
+        "next_node_list": ["test3"]
     },
     "test3": {        
         "debug": false,
@@ -36,6 +36,6 @@
         "pub_list": ["topic3"],
         "pub_data": [3000],        
         "sync_list": [],
-        "next_list": []
+        "next_node_list": []
     }
 }

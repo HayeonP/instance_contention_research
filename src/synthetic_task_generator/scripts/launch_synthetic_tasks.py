@@ -4,11 +4,11 @@ import os
 import subprocess
 import signal, sys, time
 
-config_options = ['debug', 'is_source', 'instance_mode', 'rate', 'default_exec_time', 'callback_exec_time', 'sub_list', 'pub_list', 'pub_data', 'sync_list', 'next_list']
+config_options = ['debug', 'is_source', 'instance_mode', 'rate', 'default_exec_time', 'callback_exec_time', 'sub_list', 'pub_list', 'pub_data', 'sync_list', 'next_node_list']
 
 pid_info = {}
 
-def terminate_synthetic_tasks():
+def terminate_synthetic_tasks():    
     for node_name in pid_info:
         for pid in pid_info[node_name]:
             os.system('kill -9 '+pid)
@@ -31,7 +31,7 @@ class NodeConfig:
         self.pub_data = []
         self.sub_list = []
         self.sync_list = []
-        self.next_list = []
+        self.next_node_list = []    
     
     def update(self, json_config):
         if not self.validation (json_config):
@@ -47,7 +47,7 @@ class NodeConfig:
         self.pub_data = json_config['pub_data']
         self.sub_list = json_config['sub_list']
         self.sync_list = json_config['sync_list']
-        self.next_list = json_config['next_list']
+        self.next_node_list = json_config['next_node_list']
 
         return True
 
@@ -77,7 +77,7 @@ class NodeConfig:
         print('\t - pub_data:', self.pub_data)
         print('\t - sub_list:', self.sub_list)
         print('\t - sync_list:', self.sync_list)
-        print('\t - next_list:', self.next_list)
+        print('\t - next_node_list:', self.next_node_list)
         print("=================================")
         
         return
@@ -94,16 +94,25 @@ class NodeConfig:
         rospy.set_param('/'+self.name+'/pub_data', self.pub_data)
         rospy.set_param('/'+self.name+'/sub_list', self.sub_list)
         rospy.set_param('/'+self.name+'/sync_list', self.sync_list)
+        rospy.set_param('/'+self.name+'/is_ready_to_set_schd_instance', False)
 
         return
 
-    def set_rosparam_next_list(self):
-        next_list_param = []
-        for next in self.next_list:
-            for pid in pid_info[next]: next_list_param.append(pid)
+    def set_rosparam_pid_list(self):
+        cur_pid_list_param = []
+        for pid in pid_info[self.name]: cur_pid_list_param.append(pid)
 
-        rospy.set_param('/'+self.name+'/next_list_size', len(next_list_param))
-        rospy.set_param('/'+self.name+'/next_list', next_list_param)
+        rospy.set_param('/'+self.name+'/cur_pid_list_size', len(cur_pid_list_param))
+        rospy.set_param('/'+self.name+'/cur_pid_list', cur_pid_list_param)
+
+        next_pid_list_param = []
+        for next in self.next_node_list:
+            for pid in pid_info[next]: next_pid_list_param.append(pid)
+
+        rospy.set_param('/'+self.name+'/next_pid_list_size', len(next_pid_list_param))
+        rospy.set_param('/'+self.name+'/next_pid_list', next_pid_list_param)
+
+        rospy.set_param('/'+self.name+'/is_ready_to_set_schd_instance', True)
 
 
 def create_launch_script(path, json_config_list):
@@ -126,13 +135,13 @@ def update_pid_info (json_config_list):
         for line in output:
             if 'grep' in line: continue                  
             pid = line.split()[2]
-            pid_list.append(pid)
+            pid_list.append(int(pid))
         pid_info[node_name] = pid_list             
     return
 
 def validate_next_pids_are_prepared(json_config_list, node_config_list):
     for node_config in node_config_list:        
-        for next in node_config.next_list:
+        for next in node_config.next_node_list:
             if next not in json_config_list:
                 print('[ERROR - '+node_config.name+'] Next node name \"'+next+'\" does not exist.')
                 terminate_synthetic_tasks()
@@ -163,6 +172,8 @@ def main():
         node_config.print()
         node_config.set_rosparam()
     
+    time.sleep(3)
+
     create_launch_script(launch_script_path, node_config_list)
 
     if os.fork() == 0: # Child process
@@ -177,12 +188,12 @@ def main():
                 update_pid_info (json_config_list)
                 is_pid_info_initialized = validate_next_pids_are_prepared(json_config_list, node_config_list)
                 
-                # Set rosparam next_list for each node #
+                # Set rosparam cur & next pid list for each node #
                 if is_pid_info_initialized:
-                    for node_config in node_config_list: node_config.set_rosparam_next_list()
+                    with open('pid_info.json', 'w') as json_file:
+                        json.dump(pid_info, json_file, indent=4)
+                    for node_config in node_config_list: node_config.set_rosparam_pid_list()
                         
-                
-
     return
 
 if __name__ == "__main__":
