@@ -1,5 +1,6 @@
 #include "synthetic_task_generator.h"
 
+
 SyntheticTaskGenerator::SyntheticTaskGenerator()
     : private_nh_("~")
     , is_sync_(true)
@@ -41,6 +42,7 @@ SyntheticTaskGenerator::SyntheticTaskGenerator()
     if(sync_str_vec.empty()) is_sync_ = false;
 
     private_nh_.param<bool>("debug", debug_, false);
+    private_nh_.param<bool>("debug", is_source_, false);
     private_nh_.param<bool>("instance_mode", instance_mode_, false);
     private_nh_.param<double>("rate", rate_, 10);
     private_nh_.param<double>("default_exec_time", default_exec_time_, 100.0);
@@ -48,17 +50,12 @@ SyntheticTaskGenerator::SyntheticTaskGenerator()
     private_nh_.param<int>("next_list_size", next_list_size_, 0);
     
 
-    /* Define Pub & Sub */
-    if(sub_str_vec.size() == 0) is_source_ = true;
-
-    if(!is_source_)
-    {
-        for(int i = 0; i < sub_str_vec.size(); i++){
-            ros::Subscriber sub;
-            // sub = nh_.subscribe(sub_str_vec[i].c_str(), 1, boost::bind(&SyntheticTaskGenerator::callback, _1, i), this);
-            sub = nh_.subscribe<synthetic_task_generator::SyntheticTaskMsg>(sub_str_vec[i].c_str(), 1, boost::bind(&SyntheticTaskGenerator::callback, this, boost::placeholders::_1, i, sub_str_vec[i].c_str()));
-            sub_vec_.push_back(sub);
-        }
+    /* Define Pub & Sub */    
+    for(int i = 0; i < sub_str_vec.size(); i++){
+        ros::Subscriber sub;
+        // sub = nh_.subscribe(sub_str_vec[i].c_str(), 1, boost::bind(&SyntheticTaskGenerator::callback, _1, i), this);
+        sub = nh_.subscribe<synthetic_task_generator::SyntheticTaskMsg>(sub_str_vec[i].c_str(), 1, boost::bind(&SyntheticTaskGenerator::callback, this, boost::placeholders::_1, i, sub_str_vec[i].c_str()));
+        sub_vec_.push_back(sub);
     }
 
     for(int i = 0; i < pub_str_vec.size(); i++){
@@ -165,8 +162,14 @@ bool SyntheticTaskGenerator::is_ready_to_publish(){
 void SyntheticTaskGenerator::run()
 {   
     ros::Rate rate(rate_);
+    timer_init(4);
+    timer_reset(0);
+
+    double max = 0;
+    int cold_start_cnt = 0;
 
     while(ros::ok()){
+        timer_start(0);
         /* Start job */
         #ifdef INSTANCE
         if(instance_mode_){
@@ -185,9 +188,17 @@ void SyntheticTaskGenerator::run()
             
         }
         #endif
+        timer_stop(0);
 
+        timer_start(1);
+        for(unsigned long long cnt = 0; cnt < MS_CNT(default_exec_time_); cnt++) int a = (cnt + 10) * 2000 / 127;
+        timer_stop(1);
+
+        timer_start(2);
         ros::spinOnce();
+        timer_stop(2);
 
+        timer_start(3);
         if(is_ready_to_publish()){
             for(int i = 0; i < pub_vec_.size(); i++)
             {            
@@ -204,7 +215,24 @@ void SyntheticTaskGenerator::run()
                 for(auto it = next_list_vec_.begin(); it != next_list_vec_.end(); it++) set_sched_instance(*it, instance_); // *it: next pid
             }
             #endif
+        }
+
+        timer_stop(3);
+        if(debug_){
+            cold_start_cnt++;
+            std::cout<<"====================================="<<std::endl;
+            std::cout<<"["<<node_name_<<"] Total: "<<timer_read(0) + timer_read(1) + timer_read(2)<<"s"<<std::endl;
+            std::cout<<"Update instance: "<<timer_read(0) << std::endl;
+            std::cout<<"default: "<<timer_read(1)<<"s" << std::endl;
+            std::cout<<"Spin: "<<timer_read(2)<<"s"<<std::endl;
+            std::cout<<"Set instance: "<<timer_read(3) << "s" << std::endl;  
+
+            if(cold_start_cnt > 100){
+                max = max > timer_read(1) ? max : timer_read(1);
+                std::cout<<"MAX: "<< max << "s" <<std::endl;  
+            }
         }        
+        timer_reset(0); timer_reset(1); timer_reset(2); timer_reset(3);
         rate.sleep();
     }
     return;
@@ -216,6 +244,8 @@ void SyntheticTaskGenerator::callback(synthetic_task_generator::SyntheticTaskMsg
     if(is_sync_ && need_sync_vec_[sub_idx]){
         ready_to_sync_vec_[sub_idx] = true;
     }
+
+    for(unsigned long long cnt = 0; cnt < MS_CNT(callback_exec_time_); cnt++) int a = (cnt + 10) * 2000 / 127;
 
     #ifdef INSTANCE
     if(is_source_) instance_++;

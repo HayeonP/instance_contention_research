@@ -1,39 +1,14 @@
 {
-    "test1": {
-        "debug": false,
-        "instance_mode": false,
-        "rate": 1,
-        "default_exec_time": 100.0,
-        "callback_exec_time": 100.0,
+    "test1": {        
+        "debug": true,
+        "is_source": true,
+        "instance_mode": true,
+        "rate": 10,
+        "default_exec_time": 80.0,
+        "callback_exec_time": 20.0,
         "sub_list": [],        
         "pub_list": ["topic1"],
         "pub_data": [1],        
-        "sync_list": [],
-        "next_list": ["test2", "test3"]
-    },
-
-    "test2": {
-        "debug": true,
-        "instance_mode": false,
-        "rate": 0.1,
-        "default_exec_time": 100.0,
-        "callback_exec_time": 100.0,
-        "sub_list": ["topic1"],
-        "pub_list": [],
-        "pub_data": [],        
-        "sync_list": [],
-        "next_list": []
-    },
-
-    "test3": {
-        "debug": true,
-        "instance_mode": false,
-        "rate": 0.1,
-        "default_exec_time": 100.0,
-        "callback_exec_time": 100.0,
-        "sub_list": ["topic1"],
-        "pub_list": [],
-        "pub_data": [],        
         "sync_list": [],
         "next_list": []
     }

@@ -8,9 +8,13 @@
 #include <ros/ros.h>
 #include <synthetic_task_generator/SyntheticTaskMsg.h>
 
+#include <timer.h>
+
 #ifdef INSTANCE
 #include "sched_instance.h"
 #endif
+
+#define MS_CNT(t) int(1000000.0 * t / 4.0)
 
 class SyntheticTaskGenerator{
 public:

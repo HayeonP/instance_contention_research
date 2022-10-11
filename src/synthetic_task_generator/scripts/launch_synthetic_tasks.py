@@ -4,7 +4,7 @@ import os
 import subprocess
 import signal, sys, time
 
-config_options = ['debug', 'instance_mode', 'rate', 'default_exec_time', 'callback_exec_time', 'sub_list', 'pub_list', 'pub_data', 'sync_list', 'next_list']
+config_options = ['debug', 'is_source', 'instance_mode', 'rate', 'default_exec_time', 'callback_exec_time', 'sub_list', 'pub_list', 'pub_data', 'sync_list', 'next_list']
 
 pid_info = {}
 
@@ -22,6 +22,7 @@ class NodeConfig:
     def __init__(self, name):
         self.name = name
         self.debug = False
+        self.is_source = False
         self.instance_mode = False
         self.rate = -1.0
         self.default_exec_time = -1.0
@@ -37,6 +38,7 @@ class NodeConfig:
             return False
         
         self.debug = json_config['debug']
+        self.is_source = json_config['is_source']
         self.instance_mode = json_config['instance_mode']
         self.rate = json_config['rate']
         self.default_exec_time = json_config['default_exec_time']
@@ -66,6 +68,7 @@ class NodeConfig:
         print("=================================")
         print(" - name: " + self.name)
         print('\t - debug: ' + str(self.debug))
+        print('\t - is_source: ' + str(self.is_source))
         print('\t - instance_mode: ' + str(self.instance_mode))
         print('\t - rate: ' + str(self.rate))
         print('\t - default_exec_time: ' + str(self.default_exec_time))
@@ -82,6 +85,7 @@ class NodeConfig:
     def set_rosparam(self):
 
         rospy.set_param('/'+self.name+'/debug', self.debug)
+        rospy.set_param('/'+self.name+'/is_source', self.is_source)
         rospy.set_param('/'+self.name+'/instance_mode', self.instance_mode)
         rospy.set_param('/'+self.name+'/rate', self.rate)
         rospy.set_param('/'+self.name+'/default_exec_time', self.default_exec_time)
@@ -153,7 +157,7 @@ def main():
         node_config_list.append(node_config)
         os.system('rosparam delete /'+node_name)
 
-    launch_script_path = '/home/hypark/git/instance_contention_research/src/synthetic_task_generator/launch/synthetic_task_generator.launch'
+    launch_script_path = '/home/nvidia/git/instance_contention_research/src/synthetic_task_generator/launch/synthetic_task_generator.launch'
 
     for node_config in node_config_list:
         node_config.print()

@@ -37,7 +37,7 @@ add_executable(synthetic_task_generator
   src/synthetic_task_generator_node.cpp
   src/synthetic_task_generator.cpp
   src/sched_instance.cpp
-
+  src/timer.cpp
 )
 
 add_dependencies(synthetic_task_generator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
