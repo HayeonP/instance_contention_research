@@ -1,7 +1,9 @@
 build
 log
 install
+devel
 .vscode
 build/*
 log/*
 install/*
+devel/*
