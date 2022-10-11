@@ -4,7 +4,7 @@ project(synthetic_task_generator)
 add_compile_options(-std=c++11)
 
 # Enable following line if you need instance mode
-# add_definitions(-DINSTANCE)
+add_definitions(-DINSTANCE)
 
 find_package(catkin REQUIRED)
 

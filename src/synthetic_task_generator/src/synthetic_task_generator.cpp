@@ -171,12 +171,12 @@ void SyntheticTaskGenerator::run()
         #ifdef INSTANCE
         if(instance_mode_){
             if(!is_ready_to_set_schd_instance_){
-                private_nh_.getParam("next_list", next_list_vec);
-                if(next_list_vec.size() == next_list_size_) is_ready_to_set_schd_instance_ = true;
+                private_nh_.getParam("next_list", next_list_vec_);
+                if(next_list_vec_.size() == next_list_size_) is_ready_to_set_schd_instance_ = true;
             }
 
             if(is_source_){
-                ++instnace_;
+                ++instance_;
             }
             else{
                 update_sched_instance(0);
@@ -201,7 +201,7 @@ void SyntheticTaskGenerator::run()
             /* Finish job */
             #ifdef INSTANCE
             if(instance_mode_){
-                for(auto it = next_list_vec.begin(); it != next_list_vec.end(); it++) set_sched_instance(*it, instance_); // *it: next pid
+                for(auto it = next_list_vec_.begin(); it != next_list_vec_.end(); it++) set_sched_instance(*it, instance_); // *it: next pid
             }
             #endif
         }        
