@@ -131,23 +131,22 @@ def get_pid(name):
 def update_pid_info (json_config_list):
     for node_name in json_config_list:
         output = os.popen('ps -ef -T | grep "synthetic_task_generator __name:="'+ node_name)
-        pid_list = []
+        pid_list = [] 
         for line in output:
             if 'grep' in line: continue                  
             pid = line.split()[2]
-            pid_list.append(int(pid))
+            pid_list.append(pid)
         pid_info[node_name] = pid_list             
     return
 
 def validate_next_pids_are_prepared(json_config_list, node_config_list):
-    for node_config in node_config_list:        
+    for node_config in node_config_list:
+        if len(pid_info[node_config.name]) <5 : return False
         for next in node_config.next_node_list:
             if next not in json_config_list:
                 print('[ERROR - '+node_config.name+'] Next node name \"'+next+'\" does not exist.')
                 terminate_synthetic_tasks()
                 exit(1)
-            if next not in pid_info: return False
-            if len(pid_info[next]) < 5: return False
 
     return True
 
@@ -171,8 +170,6 @@ def main():
     for node_config in node_config_list:
         node_config.print()
         node_config.set_rosparam()
-    
-    time.sleep(3)
 
     create_launch_script(launch_script_path, node_config_list)
 
@@ -183,14 +180,14 @@ def main():
     else:        
         is_pid_info_initialized = False
         while(1):
-            time.sleep(3)                        
+            time.sleep(1)                        
             if not is_pid_info_initialized:
-                update_pid_info (json_config_list)
+                update_pid_info(json_config_list)
                 is_pid_info_initialized = validate_next_pids_are_prepared(json_config_list, node_config_list)
                 
                 # Set rosparam cur & next pid list for each node #
                 if is_pid_info_initialized:
-                    with open('pid_info.json', 'w') as json_file:
+                    with open(os.environ['HOME'] + '/git/instance_contention_research/log/pid_info.json', 'w') as json_file:
                         json.dump(pid_info, json_file, indent=4)
                     for node_config in node_config_list: node_config.set_rosparam_pid_list()
                         

@@ -127,6 +127,7 @@ void SyntheticTaskGenerator::print_variables(std::vector<std::string> pub_str_ve
             std::cout<< ", " << *it;
         }
     }
+    else if(sub_str_vec.size() == 1) std::cout<<sub_str_vec[0];
     std::cout<<"]"<<std::endl;
 
     std::cout<< "- Publish: " <<std::endl<<"\t[";
@@ -136,6 +137,7 @@ void SyntheticTaskGenerator::print_variables(std::vector<std::string> pub_str_ve
             std::cout<< ", " << *it;
         }
     }
+    else if(pub_str_vec.size() == 1) std::cout<<pub_str_vec[0];
     std::cout<<"]"<<std::endl;    
 
     std::cout<< "- Sync: " <<std::endl<<"\t[";
@@ -145,6 +147,7 @@ void SyntheticTaskGenerator::print_variables(std::vector<std::string> pub_str_ve
             std::cout<< ", " << *it;
         }
     }
+    else if(sync_str_vec.size() == 1) std::cout<<sync_str_vec[0];
     std::cout<<"]"<<std::endl;
 
     std::cout<<"====================================="<<std::endl;
@@ -169,33 +172,49 @@ void SyntheticTaskGenerator::run()
     double max = 0;
     int cold_start_cnt = 0;
 
+    std::ofstream time_log_file;
+    if(debug_){        
+        time_log_file.open(std::string("/home/nvidia/git/instance_contention_research/log/time_log_")+node_name_.substr(1)+std::string(".csv"));
+        time_log_file << "total,update_instance,default,spin,set_instance\n";
+    }
+
     while(ros::ok()){
-        timer_start(0);
+        if(is_ready_to_set_schd_instance_ == true) timer_start(0);
         /* Start job */
         #ifdef INSTANCE
         if(instance_mode_){
             if(!is_ready_to_set_schd_instance_){
                 bool is_ready_to_set_schd_instance_param = false;
+                std::vector<std::string> cur_pid_str_vec, next_pid_str_vec;
+
+                private_nh_.getParam("cur_pid_list_size", cur_pid_list_size_);
+                private_nh_.getParam("next_pid_list_size", next_pid_list_size_);
                 private_nh_.getParam("is_ready_to_set_schd_instance", is_ready_to_set_schd_instance_param);
-                private_nh_.getParam("cur_pid_list", cur_pid_list_vec_);
-                private_nh_.getParam("next_pid_list", next_pid_list_vec_);
-                if(is_ready_to_set_schd_instance_param == true && cur_pid_list_size_ > 0 && cur_pid_list_vec_.size() == cur_pid_list_size_ && next_pid_list_vec_.size() == next_pid_list_size_) is_ready_to_set_schd_instance_ = true;
+                private_nh_.getParam("cur_pid_list", cur_pid_str_vec);
+                private_nh_.getParam("next_pid_list", next_pid_str_vec);
+
+                if(is_ready_to_set_schd_instance_param == true && cur_pid_list_size_ > 0 && cur_pid_str_vec.size() == cur_pid_list_size_ && next_pid_str_vec.size() == next_pid_list_size_)
+                {
+                    cur_pid_vec_.clear();
+                    next_pid_vec_.clear();
+                    for(int i = 0; i < cur_pid_list_size_; i++) cur_pid_vec_.push_back(std::stoi(cur_pid_str_vec[i]));
+                    for(int i = 0; i < next_pid_list_size_; i++) next_pid_vec_.push_back(std::stoi(next_pid_str_vec[i]));
+                    is_ready_to_set_schd_instance_ = true;
+                }
             }
 
             if(is_source_){                
                 instance_ = instance_ + 1;
-                for(int i = 0; cur_pid_list_vec_.size(); i++) set_sched_instance((pid_t)cur_pid_list_vec_[i], instance_);
+                for(int i = 0; i < cur_pid_vec_.size(); i++) set_sched_instance((pid_t)(cur_pid_vec_[i]), instance_);
             }
 
-            for(int i = 0; i < cur_pid_list_vec_.size(); i++) update_sched_instance((pid_t)cur_pid_list_vec_[i]);
+            for(int i = 0; i < cur_pid_vec_.size(); i++) update_sched_instance((pid_t)(cur_pid_vec_[i]));                
             
-            if(!is_source_){
-                instance_ = get_sched_instance(0);
-            }
+            if(!is_source_) instance_ = get_sched_instance(0);
             
         }
         #endif
-        timer_stop(0);
+        if(is_ready_to_set_schd_instance_ == true) timer_stop(0);
 
         timer_start(1);
         for(unsigned long long cnt = 0; cnt < MS_CNT(default_exec_time_); cnt++) int a = (cnt + 10) * 2000 / 127;
@@ -220,25 +239,15 @@ void SyntheticTaskGenerator::run()
             /* Finish job */
             #ifdef INSTANCE
             if(instance_mode_){
-                for(int i = 0; i < next_pid_list_vec_.size(); i++) set_sched_instance((pid_t)next_pid_list_vec_[i], instance_); // *it: next pid
+                for(int i = 0; i < next_pid_vec_.size(); i++) set_sched_instance((pid_t)(next_pid_vec_[i]), instance_); // *it: next pid
             }
             #endif
         }
         timer_stop(3);
 
         if(debug_){
-            cold_start_cnt++;
-            std::cout<<"====================================="<<std::endl;
-            std::cout<<"["<<node_name_<<"] Total: "<<timer_read(0) + timer_read(1) + timer_read(2)<<"s"<<std::endl;
-            std::cout<<"Update instance: "<<timer_read(0) << std::endl;
-            std::cout<<"default: "<<timer_read(1)<<"s" << std::endl;
-            std::cout<<"Spin: "<<timer_read(2)<<"s"<<std::endl;
-            std::cout<<"Set instance: "<<timer_read(3) << "s" << std::endl;  
-
-            if(cold_start_cnt > 100){
-                max = max > timer_read(1) ? max : timer_read(1);
-                std::cout<<"MAX: "<< max << "s" <<std::endl;  
-            }
+            time_log_file << timer_read(0) + timer_read(1) + timer_read(2) << "," << timer_read(0) << "," << timer_read(1) << "," <<timer_read(2)<<","<<timer_read(3)<<"\n";
+            time_log_file.flush();
         }        
         timer_reset(0); timer_reset(1); timer_reset(2); timer_reset(3);
         rate.sleep();
@@ -248,7 +257,6 @@ void SyntheticTaskGenerator::run()
 
 void SyntheticTaskGenerator::callback(synthetic_task_generator::SyntheticTaskMsgConstPtr msg, const int &sub_idx, const std::string topic_name)
 {    
-    if(debug_) std::cout<<"["<<node_name_<<"] callback for "<<topic_name<<" - Value: "<<msg->value<<std::endl;
     if(is_sync_ && need_sync_vec_[sub_idx]){
         ready_to_sync_vec_[sub_idx] = true;
     }

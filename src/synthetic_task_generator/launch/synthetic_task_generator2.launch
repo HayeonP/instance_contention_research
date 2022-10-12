@@ -1,0 +1,3 @@
+<launch>
+	<node pkg="synthetic_task_generator" type="synthetic_task_generator" name="test1" output="screen"/>
+</launch>

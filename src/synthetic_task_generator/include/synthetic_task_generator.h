@@ -9,6 +9,8 @@
 #include <synthetic_task_generator/SyntheticTaskMsg.h>
 
 #include <timer.h>
+#include <istream>
+#include <fstream>
 
 #ifdef INSTANCE
 #include "sched_instance.h"
@@ -51,7 +53,7 @@ private: // Variables
     int next_pid_list_size_, cur_pid_list_size_;
     std::string node_name_;
     bool is_source_, is_sync_, instance_mode_, debug_, is_ready_to_set_schd_instance_;
-    std::vector<int> next_pid_list_vec_, cur_pid_list_vec_;
+    std::vector<int> next_pid_vec_, cur_pid_vec_;
 };
 
 #endif 
