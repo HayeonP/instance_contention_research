@@ -5,6 +5,7 @@ import subprocess
 import signal, sys, time
 
 config_options = ['debug', 'is_source', 'instance_mode', 'rate', 'default_exec_time', 'callback_exec_time', 'sub_list', 'pub_list', 'pub_data', 'sync_list', 'next_node_list']
+sched_policies = ['CFS', 'FIFO']
 
 pid_info = {}
 
@@ -23,6 +24,8 @@ class NodeConfig:
         self.name = name
         self.debug = False
         self.is_source = False
+        self.sched_policy = 'CFS'
+        self.sched_priority = 0
         self.instance_mode = False
         self.rate = -1.0
         self.default_exec_time = -1.0
@@ -39,6 +42,8 @@ class NodeConfig:
         
         self.debug = json_config['debug']
         self.is_source = json_config['is_source']
+        self.sched_policy = json_config['sched_policy']
+        self.sched_priority = json_config['sched_priority']
         self.instance_mode = json_config['instance_mode']
         self.rate = json_config['rate']
         self.default_exec_time = json_config['default_exec_time']
@@ -48,6 +53,14 @@ class NodeConfig:
         self.sub_list = json_config['sub_list']
         self.sync_list = json_config['sync_list']
         self.next_node_list = json_config['next_node_list']
+
+        if self.sched_policy not in sched_policies:
+            print('[ERROR] sched_policy should be CFS or FIFO')
+            exit(1)
+        
+        if self.sched_policy == 'FIFO' and (self.sched_priority < 0 or self.sched_priority > 99):
+            print('[ERROR] sched_priority of FIFO should be [0,99]')
+            exit(1)
 
         return True
 
@@ -69,6 +82,8 @@ class NodeConfig:
         print(" - name: " + self.name)
         print('\t - debug: ' + str(self.debug))
         print('\t - is_source: ' + str(self.is_source))
+        print('\t - sched_policy: ' + str(self.sched_policy))
+        print('\t - sched_priority: ' + str(self.sched_priority))
         print('\t - instance_mode: ' + str(self.instance_mode))
         print('\t - rate: ' + str(self.rate))
         print('\t - default_exec_time: ' + str(self.default_exec_time))
@@ -86,6 +101,8 @@ class NodeConfig:
 
         rospy.set_param('/'+self.name+'/debug', self.debug)
         rospy.set_param('/'+self.name+'/is_source', self.is_source)
+        rospy.set_param('/'+self.name+'/sched_policy', self.sched_policy)
+        rospy.set_param('/'+self.name+'/sched_priority', self.sched_priority)
         rospy.set_param('/'+self.name+'/instance_mode', self.instance_mode)
         rospy.set_param('/'+self.name+'/rate', self.rate)
         rospy.set_param('/'+self.name+'/default_exec_time', self.default_exec_time)
