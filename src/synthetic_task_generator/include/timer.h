@@ -1,5 +1,6 @@
 #ifndef TIMER_H
 #define TIMER_H
+#include <iostream>
 
 void timer_init(int n);
 
@@ -13,6 +14,6 @@ double timer_read(int idx);
 
 void timer_reset(int idx);
 
-double get_current_time();
+std::string get_current_time();
 
 #endif

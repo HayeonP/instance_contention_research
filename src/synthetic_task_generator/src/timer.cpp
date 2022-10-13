@@ -1,5 +1,5 @@
 #include "timer.h"
-
+#include <iostream>
 #include <stdlib.h>
 #include <time.h>
 
@@ -11,11 +11,14 @@ struct timer_info {
 
 static struct timer_info *ti;
 
-double get_current_time(){
+std::string get_current_time(){
   struct timespec time;
   clock_gettime(CLOCK_MONOTONIC, &time);
-  long diff_nsec = time.tv_sec * 1000000000L + time.tv_nsec;
-  return diff_nsec / 1e9;
+  char buf[16];
+  sprintf(buf, "%lld.%lld", time.tv_sec, time.tv_nsec);  
+  std::string output(buf);
+  
+  return output;
 }
 
 void timer_init(int n) {

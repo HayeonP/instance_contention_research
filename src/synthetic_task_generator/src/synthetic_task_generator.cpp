@@ -182,7 +182,7 @@ void SyntheticTaskGenerator::run()
         time_log_file << "total,update_instance,default,spin,set_instance\n";
     }
 
-    double start_time, end_time;
+    std::string start_time, end_time;
     while(ros::ok()){
         start_time = get_current_time();
         if(is_ready_to_set_schd_instance_ == true) timer_start(0);
@@ -256,7 +256,9 @@ void SyntheticTaskGenerator::run()
             time_log_file.flush();
         }        
         timer_reset(0); timer_reset(1); timer_reset(2); timer_reset(3);
+
         end_time = get_current_time();
+        
         response_time_log_file << getpid() << "," << start_time << "," << end_time << "," << instance_ << std::endl;
         rate.sleep();
     }
