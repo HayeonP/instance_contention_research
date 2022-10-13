@@ -1,12 +1,3 @@
 <launch>
-	<node pkg="synthetic_task_generator" type="synthetic_task_generator" name="test2" output="screen"/>
-	<node pkg="synthetic_task_generator" type="synthetic_task_generator" name="test3" output="screen"/>
-	<node pkg="synthetic_task_generator" type="synthetic_task_generator" name="test4" output="screen"/>
-	<node pkg="synthetic_task_generator" type="synthetic_task_generator" name="test5" output="screen"/>
-	<node pkg="synthetic_task_generator" type="synthetic_task_generator" name="test6" output="screen"/>
-	<node pkg="synthetic_task_generator" type="synthetic_task_generator" name="test7" output="screen"/>
-	<node pkg="synthetic_task_generator" type="synthetic_task_generator" name="test8" output="screen"/>
-	<node pkg="synthetic_task_generator" type="synthetic_task_generator" name="test9" output="screen"/>
-	<node pkg="synthetic_task_generator" type="synthetic_task_generator" name="test10" output="screen"/>
-	<node pkg="synthetic_task_generator" type="synthetic_task_generator" name="test11" output="screen"/>
+	<node pkg="synthetic_task_generator" type="synthetic_task_generator" name="test1" output="screen"/>
 </launch>

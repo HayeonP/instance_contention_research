@@ -172,13 +172,19 @@ void SyntheticTaskGenerator::run()
     double max = 0;
     int cold_start_cnt = 0;
 
+    std::ofstream response_time_log_file;
+    response_time_log_file.open(std::string("/home/nvidia/git/instance_contention_research/log/response_time/")+node_name_.substr(1)+std::string(".csv"));
+    response_time_log_file << "PID,start,end,instance\n";
+
     std::ofstream time_log_file;
     if(debug_){        
         time_log_file.open(std::string("/home/nvidia/git/instance_contention_research/log/time_log_")+node_name_.substr(1)+std::string(".csv"));
         time_log_file << "total,update_instance,default,spin,set_instance\n";
     }
 
+    double start_time, end_time;
     while(ros::ok()){
+        start_time = get_current_time();
         if(is_ready_to_set_schd_instance_ == true) timer_start(0);
         /* Start job */
         #ifdef INSTANCE
@@ -250,6 +256,8 @@ void SyntheticTaskGenerator::run()
             time_log_file.flush();
         }        
         timer_reset(0); timer_reset(1); timer_reset(2); timer_reset(3);
+        end_time = get_current_time();
+        response_time_log_file << getpid() << "," << start_time << "," << end_time << "," << instance_ << std::endl;
         rate.sleep();
     }
     return;

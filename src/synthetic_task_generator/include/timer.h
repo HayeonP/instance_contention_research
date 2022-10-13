@@ -13,4 +13,6 @@ double timer_read(int idx);
 
 void timer_reset(int idx);
 
+double get_current_time();
+
 #endif

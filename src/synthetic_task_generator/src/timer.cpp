@@ -11,6 +11,13 @@ struct timer_info {
 
 static struct timer_info *ti;
 
+double get_current_time(){
+  struct timespec time;
+  clock_gettime(CLOCK_MONOTONIC, &time);
+  long diff_nsec = time.tv_sec * 1000000000L + time.tv_nsec;
+  return diff_nsec / 1e9;
+}
+
 void timer_init(int n) {
   ti = (struct timer_info*)malloc(n * sizeof(struct timer_info));
   for (int i = 0; i < n; ++i) {
