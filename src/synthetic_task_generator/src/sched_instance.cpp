@@ -19,4 +19,9 @@ int update_sched_instance(pid_t pid)
     return syscall(293, pid);
 }
 
+int debug_finish_job(pid_t pid)
+{
+    return syscall(294, pid);
+}
+
 #endif

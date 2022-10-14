@@ -280,6 +280,7 @@ void SyntheticTaskGenerator::run()
         end_time = get_current_time();
         
         response_time_log_file << getpid() << "," << start_time << "," << end_time << "," << instance_ << std::endl;
+        debug_finish_job(0);
         rate.sleep();
     }
     return;
