@@ -204,7 +204,7 @@ def main():
                 
                 # Set rosparam cur & next pid list for each node #
                 if is_pid_info_initialized:
-                    with open(os.environ['HOME'] + '/git/instance_contention_research/log/pid_info.json', 'w') as json_file:
+                    with open('/home/nvidia/git/instance_contention_research/log/pid_info.json', 'w') as json_file:
                         json.dump(pid_info, json_file, indent=4)
                     for node_config in node_config_list: node_config.set_rosparam_pid_list()
                         

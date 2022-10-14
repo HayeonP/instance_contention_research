@@ -43,6 +43,8 @@ SyntheticTaskGenerator::SyntheticTaskGenerator()
 
     private_nh_.param<bool>("debug", debug_, false);
     private_nh_.param<bool>("is_source", is_source_, false);
+    private_nh_.param<std::string>("sched_policy", sched_policy_, std::string("NONE"));
+    private_nh_.param<int>("sched_priority", sched_priority_, 0);
     private_nh_.param<bool>("instance_mode", instance_mode_, false);
     private_nh_.param<double>("rate", rate_, 10);
     private_nh_.param<double>("default_exec_time", default_exec_time_, 100.0);
@@ -50,6 +52,24 @@ SyntheticTaskGenerator::SyntheticTaskGenerator()
     private_nh_.param<int>("cur_pid_list_size", cur_pid_list_size_, 0);
     private_nh_.param<int>("next_pid_list_size", next_pid_list_size_, 0);
     
+    /* Scheduyling Setup */
+    if(sched_policy_ != std::string("CFS") && sched_policy_ != std::string("FIFO")){
+        std::cout<<"## "<<sched_policy_<<std::endl;
+        std::cout << "[ERROR] Please use CFS or FIFO for scheduling policy." << std::endl;
+        exit(1);
+    }
+    if(sched_priority_ < 0 || sched_priority_ > 99){
+        std::cout << "[ERROR] Sched priority for SCHED_FIFO should be [0, 99]." << std::endl;
+        exit(1);
+    }
+    if(sched_policy_ == std::string("FIFO")){
+        struct sched_param sp = { .sched_priority = sched_priority_ };
+        if (sched_setscheduler(0, SCHED_FIFO, &sp) < 0) {
+        perror("sched_setscheduler");
+        exit(1);
+    }
+    }
+
 
     /* Define Pub & Sub */    
     for(int i = 0; i < sub_str_vec.size(); i++){
