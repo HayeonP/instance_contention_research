@@ -6,6 +6,7 @@ SyntheticTaskGenerator::SyntheticTaskGenerator()
     , is_sync_(true)
     , instance_(0)
     ,is_ready_to_set_schd_instance_(false)
+    ,is_finish_job_(false)
 {
     /* Get rosparams */
     std::vector<std::string> pub_str_vec;
@@ -267,7 +268,7 @@ void SyntheticTaskGenerator::run()
             if(instance_mode_){
                 for(int i = 0; i < next_pid_vec_.size(); i++) set_sched_instance((pid_t)(next_pid_vec_[i]), instance_); // *it: next pid
             }
-            #endif
+            #endif            
         }
         timer_stop(3);
 
@@ -280,7 +281,11 @@ void SyntheticTaskGenerator::run()
         end_time = get_current_time();
         
         response_time_log_file << getpid() << "," << start_time << "," << end_time << "," << instance_ << std::endl;
-        debug_finish_job(0);
+
+        if(is_finish_job_){
+            is_finish_job_ = false;
+            debug_finish_job(0);
+        }
         rate.sleep();
     }
     return;
@@ -299,5 +304,6 @@ void SyntheticTaskGenerator::callback(synthetic_task_generator::SyntheticTaskMsg
     if(instance_mode_) instance_ = msg->instance;
     #endif
 
+    is_finish_job_ = true;
     return;
 }

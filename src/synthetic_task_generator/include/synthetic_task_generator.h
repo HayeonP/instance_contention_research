@@ -57,6 +57,7 @@ private: // Variables
     int sched_priority_;
     std::string sched_policy_;
     std::vector<int> next_pid_vec_, cur_pid_vec_;
+    bool is_finish_job_;
 };
 
 #endif 
