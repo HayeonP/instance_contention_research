@@ -6,7 +6,7 @@ SyntheticTaskGenerator::SyntheticTaskGenerator()
     , is_sync_(true)
     , instance_(0)
     ,is_ready_to_set_schd_instance_(false)
-    ,is_finish_job_(false)
+    ,is_job_finished_(false)
 {
     /* Get rosparams */
     std::vector<std::string> pub_str_vec;
@@ -175,7 +175,8 @@ void SyntheticTaskGenerator::print_variables(std::vector<std::string> pub_str_ve
 }
 
 bool SyntheticTaskGenerator::is_ready_to_publish(){
-    if(!is_sync_) return true;    
+    if(is_source_) return true;
+    if(!is_job_finished_) return false;
 
     for(int i = 0; i < need_sync_vec_.size(); i++){
         if(need_sync_vec_[i] == true && ready_to_sync_vec_[i] == false) return false;
@@ -282,8 +283,8 @@ void SyntheticTaskGenerator::run()
         
         response_time_log_file << getpid() << "," << start_time << "," << end_time << "," << instance_ << std::endl;
 
-        if(is_finish_job_){
-            is_finish_job_ = false;
+        if(is_job_finished_){
+            is_job_finished_ = false;
             debug_finish_job(0);
         }
         rate.sleep();
@@ -304,6 +305,6 @@ void SyntheticTaskGenerator::callback(synthetic_task_generator::SyntheticTaskMsg
     if(instance_mode_) instance_ = msg->instance;
     #endif
 
-    is_finish_job_ = true;
+    is_job_finished_ = true;
     return;
 }
