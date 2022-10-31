@@ -226,6 +226,7 @@ void SyntheticTaskGenerator::run()
                     if(sched_policy_ == std::string("FIFO")){
                         for(int i = 0; i < cur_pid_vec_.size(); i++){
                             struct sched_param sp = { .sched_priority = sched_priority_ };
+                            if(i != 0) sp.sched_priority = 99; // Non-main thread get high priority                  
                             if (sched_setscheduler(cur_pid_vec_[i], SCHED_FIFO, &sp) < 0) {
                                 perror("sched_setscheduler");
                                 exit(1);
