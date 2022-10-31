@@ -2,7 +2,7 @@
     "test1": {        
         "debug": false,
         "is_source": true,
-        "sched_policy": "CFS",
+        "sched_policy": "FIFO",
         "sched_priority": 1,
         "instance_mode": true,
         "rate": 10,
@@ -17,7 +17,7 @@
     "test2": {        
         "debug": false,
         "is_source": false,
-        "sched_policy": "CFS",
+        "sched_policy": "FIFO",
         "sched_priority": 2,
         "instance_mode": true,
         "rate": 100,
@@ -32,7 +32,7 @@
     "test3": {        
         "debug": true,
         "is_source": false,
-        "sched_policy": "CFS",
+        "sched_policy": "FIFO",
         "sched_priority": 3,
         "instance_mode": true,
         "rate": 100,
@@ -47,7 +47,7 @@
     "test4": {        
         "debug": true,
         "is_source": false,
-        "sched_policy": "CFS",
+        "sched_policy": "FIFO",
         "sched_priority": 4,
         "instance_mode": true,
         "rate": 100,

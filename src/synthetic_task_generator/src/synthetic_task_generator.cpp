@@ -254,6 +254,13 @@ void SyntheticTaskGenerator::run()
 
         timer_start(3);
         if(is_ready_to_publish()){
+            /* Finish job */
+            #ifdef INSTANCE
+            if(instance_mode_){
+                for(int i = 0; i < next_pid_vec_.size(); i++) set_sched_instance((pid_t)(next_pid_vec_[i]), instance_); // *it: next pid
+            }
+            #endif
+
             for(int i = 0; i < pub_vec_.size(); i++)
             {            
                 synthetic_task_generator::SyntheticTaskMsg msg;
@@ -262,14 +269,7 @@ void SyntheticTaskGenerator::run()
                 pub_vec_[i].publish(msg);                                
             }
 
-            for(int i = 0; i < ready_to_sync_vec_.size(); i++) ready_to_sync_vec_[i] = false;
-
-            /* Finish job */
-            #ifdef INSTANCE
-            if(instance_mode_){
-                for(int i = 0; i < next_pid_vec_.size(); i++) set_sched_instance((pid_t)(next_pid_vec_[i]), instance_); // *it: next pid
-            }
-            #endif            
+            for(int i = 0; i < ready_to_sync_vec_.size(); i++) ready_to_sync_vec_[i] = false;                
         }
         timer_stop(3);
 
