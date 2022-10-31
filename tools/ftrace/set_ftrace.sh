@@ -24,6 +24,7 @@ echo "Size of ftrace buffer = "$BUFFER_SIZE
 
 echo 1 > /sys/kernel/debug/tracing/events/sched/sched_switch/enable
 echo 1 > /sys/kernel/debug/tracing/events/sched/update_sched_instance/enable
+echo 1 > /sys/kernel/debug/tracing/events/sched/set_sched_instance/enable
 echo 1 > /sys/kernel/debug/tracing/events/sched/debug_finish_job/enable
 sleep 0.5
 echo "sched events enabled"
