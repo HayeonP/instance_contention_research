@@ -117,6 +117,7 @@ SyntheticTaskGenerator::SyntheticTaskGenerator()
 
     /* Print variables(debug) */
     if(debug_) print_variables(pub_str_vec, sub_str_vec, sync_str_vec);
+
 }
 
 SyntheticTaskGenerator::~SyntheticTaskGenerator()
@@ -286,7 +287,7 @@ void SyntheticTaskGenerator::run()
         
         response_time_log_file << getpid() << "," << start_time << "," << end_time << "," << instance_ << std::endl;
 
-        if(is_job_finished_){
+        if(is_job_finished_ || is_source_){
             is_job_finished_ = false;
             debug_finish_job(0);
         }
