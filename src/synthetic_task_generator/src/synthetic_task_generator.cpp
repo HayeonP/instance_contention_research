@@ -63,14 +63,6 @@ SyntheticTaskGenerator::SyntheticTaskGenerator()
         std::cout << "[ERROR] Sched priority for SCHED_FIFO should be [0, 99]." << std::endl;
         exit(1);
     }
-    if(sched_policy_ == std::string("FIFO")){
-        struct sched_param sp = { .sched_priority = sched_priority_ };
-        if (sched_setscheduler(0, SCHED_FIFO, &sp) < 0) {
-        perror("sched_setscheduler");
-        exit(1);
-    }
-    }
-
 
     /* Define Pub & Sub */    
     for(int i = 0; i < sub_str_vec.size(); i++){
@@ -228,6 +220,17 @@ void SyntheticTaskGenerator::run()
                     for(int i = 0; i < cur_pid_list_size_; i++) cur_pid_vec_.push_back(std::stoi(cur_pid_str_vec[i]));
                     for(int i = 0; i < next_pid_list_size_; i++) next_pid_vec_.push_back(std::stoi(next_pid_str_vec[i]));
                     is_ready_to_set_schd_instance_ = true;
+
+                    /* Setup RT scheduler and priority */
+                    if(sched_policy_ == std::string("FIFO")){
+                        for(int i = 0; i < cur_pid_vec_.size(); i++){
+                            struct sched_param sp = { .sched_priority = sched_priority_ };
+                            if (sched_setscheduler(cur_pid_vec_[i], SCHED_FIFO, &sp) < 0) {
+                                perror("sched_setscheduler");
+                                exit(1);
+                            }
+                        }
+                    }
                 }
             }
 
