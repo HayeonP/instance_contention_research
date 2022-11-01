@@ -4,7 +4,7 @@ import os
 import subprocess
 import signal, sys, time
 
-config_options = ['debug', 'is_source', 'instance_mode', 'rate', 'default_exec_time', 'callback_exec_time', 'sub_list', 'pub_list', 'pub_data', 'sync_list', 'next_node_list']
+config_options = ['debug', 'is_source', 'instance_mode', 'period', 'default_exec_time', 'callback_exec_time', 'sub_list', 'pub_list', 'pub_data', 'sync_list', 'next_node_list']
 sched_policies = ['CFS', 'FIFO']
 
 pid_info = {}
@@ -45,7 +45,7 @@ class NodeConfig:
         self.sched_policy = json_config['sched_policy']
         self.sched_priority = json_config['sched_priority']
         self.instance_mode = json_config['instance_mode']
-        self.rate = json_config['rate']
+        self.rate = 1000.0 / json_config['period']
         self.default_exec_time = json_config['default_exec_time']
         self.callback_exec_time = json_config['callback_exec_time']
         self.pub_list = json_config['pub_list']
