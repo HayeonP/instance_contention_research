@@ -1,11 +1,11 @@
-{
+{ 
     "test1": {        
         "debug": false,
         "is_source": true,
-        "sched_policy": "FIFO",
+        "sched_policy": "CFS",
         "sched_priority": 5,
         "instance_mode": true,
-        "rate": 10,
+        "period": 100,
         "default_exec_time": 5.0,
         "callback_exec_time": 5.0,
         "sub_list": [],        
@@ -17,10 +17,10 @@
     "test2": {        
         "debug": false,
         "is_source": false,
-        "sched_policy": "FIFO",
+        "sched_policy": "CFS",
         "sched_priority": 6,
         "instance_mode": true,
-        "rate": 100,
+        "period": 20,
         "default_exec_time": 1.0,
         "callback_exec_time": 39.0,
         "sub_list": ["topic1"],        
@@ -32,10 +32,10 @@
     "test3": {        
         "debug": true,
         "is_source": false,
-        "sched_policy": "FIFO",
+        "sched_policy": "CFS",
         "sched_priority": 7,
         "instance_mode": true,
-        "rate": 100,
+        "period": 20,
         "default_exec_time": 1.0,
         "callback_exec_time": 39.0,
         "sub_list": ["topic2"],        
@@ -47,15 +47,15 @@
     "test4": {        
         "debug": true,
         "is_source": false,
-        "sched_policy": "FIFO",
+        "sched_policy": "CFS",
         "sched_priority": 8,
         "instance_mode": true,
-        "rate": 100,
+        "period": 20,
         "default_exec_time": 1.0,
         "callback_exec_time": 9.0,
         "sub_list": ["topic3"],        
         "pub_list": ["topic4"],
-        "pub_data": [400000],        
+        "pub_data": [300000],        
         "sync_list": [],
         "next_node_list": []
     }

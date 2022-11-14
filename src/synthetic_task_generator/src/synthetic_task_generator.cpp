@@ -1,6 +1,9 @@
 #include "synthetic_task_generator.h"
 
 
+std::ofstream response_time_log_file_;
+std::ofstream time_log_file_;
+
 SyntheticTaskGenerator::SyntheticTaskGenerator()
     : private_nh_("~")
     , is_sync_(true)
@@ -187,118 +190,129 @@ void SyntheticTaskGenerator::run()
     double max = 0;
     int cold_start_cnt = 0;
 
-    std::ofstream response_time_log_file;
-    response_time_log_file.open(std::string("/home/nvidia/git/instance_contention_research/log/response_time/")+node_name_.substr(1)+std::string(".csv"));
-    response_time_log_file << "PID,start,end,instance\n";
-
-    std::ofstream time_log_file;
+    response_time_log_file_.open(std::string("/home/nvidia/git/instance_contention_research/log/response_time/")+node_name_.substr(1)+std::string(".csv"));
+    response_time_log_file_ << "PID,start,end,instance\n";
+    
     if(debug_){        
-        time_log_file.open(std::string("/home/nvidia/git/instance_contention_research/log/time_log_")+node_name_.substr(1)+std::string(".csv"));
-        time_log_file << "total,update_instance,default,spin,set_instance\n";
+        time_log_file_.open(std::string("/home/nvidia/git/instance_contention_research/log/time_log_")+node_name_.substr(1)+std::string(".csv"));
+        time_log_file_ << "total,update_instance,default,spin,set_instance\n";
     }
-
-    std::string start_time, end_time;
-    while(ros::ok()){
-        start_time = get_current_time();
-        if(is_ready_to_set_schd_instance_ == true) timer_start(0);
-        /* Start job */
-        #ifdef INSTANCE
-        if(instance_mode_){
-            if(!is_ready_to_set_schd_instance_){
-                bool is_ready_to_set_schd_instance_param = false;
-                std::vector<std::string> cur_pid_str_vec, next_pid_str_vec;
-
-                private_nh_.getParam("cur_pid_list_size", cur_pid_list_size_);
-                private_nh_.getParam("next_pid_list_size", next_pid_list_size_);
-                private_nh_.getParam("is_ready_to_set_schd_instance", is_ready_to_set_schd_instance_param);
-                private_nh_.getParam("cur_pid_list", cur_pid_str_vec);
-                private_nh_.getParam("next_pid_list", next_pid_str_vec);
-
-                if(is_ready_to_set_schd_instance_param == true && cur_pid_list_size_ > 0 && cur_pid_str_vec.size() == cur_pid_list_size_ && next_pid_str_vec.size() == next_pid_list_size_)
-                {
-                    cur_pid_vec_.clear();
-                    next_pid_vec_.clear();
-                    for(int i = 0; i < cur_pid_list_size_; i++) cur_pid_vec_.push_back(std::stoi(cur_pid_str_vec[i]));
-                    for(int i = 0; i < next_pid_list_size_; i++) next_pid_vec_.push_back(std::stoi(next_pid_str_vec[i]));
-                    is_ready_to_set_schd_instance_ = true;
-
-                    /* Setup RT scheduler and priority */
-                    if(sched_policy_ == std::string("FIFO")){
-                        for(int i = 0; i < cur_pid_vec_.size(); i++){
-                            struct sched_param sp = { .sched_priority = sched_priority_ };
-                            if(i != 0) sp.sched_priority = 99; // Non-main thread get high priority                  
-                            if (sched_setscheduler(cur_pid_vec_[i], SCHED_FIFO, &sp) < 0) {
-                                perror("sched_setscheduler");
-                                exit(1);
+    
+    if(is_source_){
+        while(ros::ok()){
+            std::string start_time, end_time;
+            start_time = get_current_time();
+            if(is_ready_to_set_schd_instance_ == true) timer_start(0);     
+    
+            #ifdef INSTANCE
+            if(instance_mode_){
+                if(!is_ready_to_set_schd_instance_){
+                    bool is_ready_to_set_schd_instance_param = false;
+                    std::vector<std::string> cur_pid_str_vec, next_pid_str_vec;
+    
+                    private_nh_.getParam("cur_pid_list_size", cur_pid_list_size_);
+                    private_nh_.getParam("next_pid_list_size", next_pid_list_size_);
+                    private_nh_.getParam("is_ready_to_set_schd_instance", is_ready_to_set_schd_instance_param);
+                    private_nh_.getParam("cur_pid_list", cur_pid_str_vec);
+                    private_nh_.getParam("next_pid_list", next_pid_str_vec);
+    
+                    if(is_ready_to_set_schd_instance_param == true && cur_pid_list_size_ > 0 && cur_pid_str_vec.size() == cur_pid_list_size_ && next_pid_str_vec.size() == next_pid_list_size_)
+                    {
+                        cur_pid_vec_.clear();
+                        next_pid_vec_.clear();
+                        for(int i = 0; i < cur_pid_list_size_; i++) cur_pid_vec_.push_back(std::stoi(cur_pid_str_vec[i]));
+                        for(int i = 0; i < next_pid_list_size_; i++) next_pid_vec_.push_back(std::stoi(next_pid_str_vec[i]));
+                        is_ready_to_set_schd_instance_ = true;
+    
+                        /* Setup RT scheduler and priority */
+                        if(sched_policy_ == std::string("FIFO")){
+                            for(int i = 0; i < cur_pid_vec_.size(); i++){
+                                struct sched_param sp = { .sched_priority = sched_priority_ };
+                                if(i != 0) sp.sched_priority = 99; // Non-main thread get high priority                  
+                                if (sched_setscheduler(cur_pid_vec_[i], SCHED_FIFO, &sp) < 0) {
+                                    perror("sched_setscheduler");
+                                    exit(1);
+                                }
                             }
                         }
                     }
                 }
-            }
-
-            if(is_source_){                
-                instance_ = instance_ + 1;
-                for(int i = 0; i < cur_pid_vec_.size(); i++) set_sched_instance((pid_t)(cur_pid_vec_[i]), instance_);
-            }
-
-            for(int i = 0; i < cur_pid_vec_.size(); i++) update_sched_instance((pid_t)(cur_pid_vec_[i]));                
-            
-            if(!is_source_) instance_ = get_sched_instance(0);
-            
-        }
-        #endif
-        if(is_ready_to_set_schd_instance_ == true) timer_stop(0);
-
-        timer_start(1);
-        for(unsigned long long cnt = 0; cnt < MS_CNT(default_exec_time_); cnt++) int a = (cnt + 10) * 2000 / 127;
-        timer_stop(1);
-
-        timer_start(2);
-        ros::spinOnce();
-        timer_stop(2);
-
-        timer_start(3);
-        if(is_ready_to_publish()){
-            /* Finish job */
-            #ifdef INSTANCE
-            if(instance_mode_){
-                for(int i = 0; i < next_pid_vec_.size(); i++) set_sched_instance((pid_t)(next_pid_vec_[i]), instance_); // *it: next pid
+    
+                if(is_source_){                
+                    instance_ = instance_ + 1;
+                    for(int i = 0; i < cur_pid_vec_.size(); i++) set_sched_instance((pid_t)(cur_pid_vec_[i]), instance_);
+                }
+    
+                for(int i = 0; i < cur_pid_vec_.size(); i++) update_sched_instance((pid_t)(cur_pid_vec_[i]));                
+    
+                if(!is_source_) instance_ = get_sched_instance(0);
+    
             }
             #endif
-
-            for(int i = 0; i < pub_vec_.size(); i++)
-            {            
-                synthetic_task_generator::SyntheticTaskMsg msg;
-                msg.instance = instance_;
-                msg.value = pub_data_vec_[i]++;
-                pub_vec_[i].publish(msg);                                
+            if(is_ready_to_set_schd_instance_ == true) timer_stop(0);
+    
+            timer_start(1);
+            for(unsigned long long cnt = 0; cnt < MS_CNT(default_exec_time_); cnt++) int a = (cnt + 10) * 2000 / 127;
+            timer_stop(1);
+    
+            timer_start(2);
+            ros::spinOnce();
+            timer_stop(2);
+    
+            timer_start(3);
+            if(is_ready_to_publish()){
+                /* Finish job */
+                #ifdef INSTANCE
+                if(instance_mode_){
+                    for(int i = 0; i < next_pid_vec_.size(); i++) set_sched_instance((pid_t)(next_pid_vec_[i]), instance_); // *it: next pid
+                }
+                #endif
+    
+                for(int i = 0; i < pub_vec_.size(); i++)
+                {            
+                    synthetic_task_generator::SyntheticTaskMsg msg;
+                    msg.instance = instance_;
+                    msg.value = pub_data_vec_[i]++;
+                    pub_vec_[i].publish(msg);                                
+                }
+    
+                for(int i = 0; i < ready_to_sync_vec_.size(); i++) ready_to_sync_vec_[i] = false;                
             }
-
-            for(int i = 0; i < ready_to_sync_vec_.size(); i++) ready_to_sync_vec_[i] = false;                
+            timer_stop(3);
+    
+            if(debug_){
+                time_log_file_ << timer_read(0) + timer_read(1) + timer_read(2) << "," << timer_read(0) << "," << timer_read(1) << "," <<timer_read(2)<<","<<timer_read(3)<<"\n";
+                time_log_file_.flush();
+            }        
+            timer_reset(0); timer_reset(1); timer_reset(2); timer_reset(3);
+    
+            end_time = get_current_time();
+    
+            response_time_log_file_ << getpid() << "," << start_time << "," << end_time << "," << instance_ << std::endl;
+    
+            if(is_job_finished_ || is_source_){
+                is_job_finished_ = false;
+                debug_finish_job(0);
+            }
+            
+            rate.sleep();
         }
-        timer_stop(3);
-
-        if(debug_){
-            time_log_file << timer_read(0) + timer_read(1) + timer_read(2) << "," << timer_read(0) << "," << timer_read(1) << "," <<timer_read(2)<<","<<timer_read(3)<<"\n";
-            time_log_file.flush();
-        }        
-        timer_reset(0); timer_reset(1); timer_reset(2); timer_reset(3);
-
-        end_time = get_current_time();
-        
-        response_time_log_file << getpid() << "," << start_time << "," << end_time << "," << instance_ << std::endl;
-
-        if(is_job_finished_ || is_source_){
-            is_job_finished_ = false;
-            debug_finish_job(0);
-        }
-        rate.sleep();
     }
+    else{
+        ros::spin();
+    }
+
+
     return;
 }
 
 void SyntheticTaskGenerator::callback(synthetic_task_generator::SyntheticTaskMsgConstPtr msg, const int &sub_idx, const std::string topic_name)
-{    
+{  
+    std::string start_time, end_time;
+    start_time = get_current_time();
+    if(is_ready_to_set_schd_instance_ == true) timer_start(0);
+
+    /* Callback */
     if(is_sync_ && need_sync_vec_[sub_idx]){
         ready_to_sync_vec_[sub_idx] = true;
     }
@@ -311,5 +325,92 @@ void SyntheticTaskGenerator::callback(synthetic_task_generator::SyntheticTaskMsg
     #endif
 
     is_job_finished_ = true;
+
+    /* Start job */
+    #ifdef INSTANCE
+    if(instance_mode_){
+        if(!is_ready_to_set_schd_instance_){
+            bool is_ready_to_set_schd_instance_param = false;
+            std::vector<std::string> cur_pid_str_vec, next_pid_str_vec;
+
+            private_nh_.getParam("cur_pid_list_size", cur_pid_list_size_);
+            private_nh_.getParam("next_pid_list_size", next_pid_list_size_);
+            private_nh_.getParam("is_ready_to_set_schd_instance", is_ready_to_set_schd_instance_param);
+            private_nh_.getParam("cur_pid_list", cur_pid_str_vec);
+            private_nh_.getParam("next_pid_list", next_pid_str_vec);
+
+            if(is_ready_to_set_schd_instance_param == true && cur_pid_list_size_ > 0 && cur_pid_str_vec.size() == cur_pid_list_size_ && next_pid_str_vec.size() == next_pid_list_size_)
+            {
+                cur_pid_vec_.clear();
+                next_pid_vec_.clear();
+                for(int i = 0; i < cur_pid_list_size_; i++) cur_pid_vec_.push_back(std::stoi(cur_pid_str_vec[i]));
+                for(int i = 0; i < next_pid_list_size_; i++) next_pid_vec_.push_back(std::stoi(next_pid_str_vec[i]));
+                is_ready_to_set_schd_instance_ = true;
+
+                /* Setup RT scheduler and priority */
+                if(sched_policy_ == std::string("FIFO")){
+                    for(int i = 0; i < cur_pid_vec_.size(); i++){
+                        struct sched_param sp = { .sched_priority = sched_priority_ };
+                        if(i != 0) sp.sched_priority = 99; // Non-main thread get high priority                  
+                        if (sched_setscheduler(cur_pid_vec_[i], SCHED_FIFO, &sp) < 0) {
+                            perror("sched_setscheduler");
+                            exit(1);
+                        }
+                    }
+                }
+            }
+        }
+
+        for(int i = 0; i < cur_pid_vec_.size(); i++) update_sched_instance((pid_t)(cur_pid_vec_[i]));                
+        
+        if(!is_source_) instance_ = get_sched_instance(0);
+        
+    }
+    #endif
+    if(is_ready_to_set_schd_instance_ == true) timer_stop(0);
+
+    timer_start(1);
+    for(unsigned long long cnt = 0; cnt < MS_CNT(default_exec_time_); cnt++) int a = (cnt + 10) * 2000 / 127;
+    timer_stop(1);
+
+    timer_start(2);
+    timer_stop(2);
+
+    timer_start(3);
+    if(is_ready_to_publish()){
+        /* Finish job */
+        #ifdef INSTANCE
+        if(instance_mode_){
+            for(int i = 0; i < next_pid_vec_.size(); i++) set_sched_instance((pid_t)(next_pid_vec_[i]), instance_); // *it: next pid
+        }
+        #endif
+
+        for(int i = 0; i < pub_vec_.size(); i++)
+        {            
+            synthetic_task_generator::SyntheticTaskMsg msg;
+            msg.instance = instance_;
+            msg.value = pub_data_vec_[i]++;
+            pub_vec_[i].publish(msg);                                
+        }
+
+        for(int i = 0; i < ready_to_sync_vec_.size(); i++) ready_to_sync_vec_[i] = false;                
+    }
+    timer_stop(3);
+
+    if(debug_){
+        time_log_file_ << timer_read(0) + timer_read(1) + timer_read(2) << "," << timer_read(0) << "," << timer_read(1) << "," <<timer_read(2)<<","<<timer_read(3)<<"\n";
+        time_log_file_.flush();
+    }        
+    timer_reset(0); timer_reset(1); timer_reset(2); timer_reset(3);
+
+    end_time = get_current_time();
+    
+    response_time_log_file_ << getpid() << "," << start_time << "," << end_time << "," << instance_ << std::endl;
+
+    if(is_job_finished_ || is_source_){
+        is_job_finished_ = false;
+        debug_finish_job(0);
+    }
+
     return;
 }

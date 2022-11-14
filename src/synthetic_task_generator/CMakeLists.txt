@@ -44,3 +44,15 @@ add_dependencies(synthetic_task_generator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${
 target_link_libraries(synthetic_task_generator
   ${catkin_LIBRARIES}
 )
+
+add_executable(synthetic_task_generator_spinonce
+  src/synthetic_task_generator_spinonce_node.cpp
+  src/synthetic_task_generator_spinonce.cpp
+  src/sched_instance.cpp
+  src/timer.cpp
+)
+
+add_dependencies(synthetic_task_generator ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(synthetic_task_generator_spinonce
+  ${catkin_LIBRARIES}
+)
